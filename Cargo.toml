@@ -1,0 +1,19 @@
+[workspace]
+
+members = [
+    "crates/base",
+    "crates/blockchain",
+    "crates/blockchain-app",
+    "crates/db",
+    "crates/xactor-playground",
+    "crates/common",
+    "crates/client",
+    "crates/server-app",
+    "crates/client-app",
+    "crates/crypto",
+    "crates/server",
+    "crates/xactor",
+    "crates/xactor-derive",
+    "crates/playground",
+    "crates/double-ratchet"
+]

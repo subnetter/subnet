@@ -1,0 +1,110 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.core_types;
+import "snp/core_types/types.proto";
+import "snp/payments/types.proto";
+
+/////////////////////////
+//
+// SNP - Channels data
+//
+
+// Request to subscribe to a channel or to a group.
+// Note that there's no need to sign as app-level protocol messages are always delivered as a signed TypedMessage
+message ChannelSubscriptionRequestData {
+    uint64 time_stamp = 1;
+    bytes channel_id = 2;
+    EntityId user = 3;
+    string message = 4; // short request message. e.g. Hi, this is foo - we talked on...
+    snp.payments.TransactionId tx_id = 5; // optional - payment tx id
+    GroupMemberBundle membership = 6; // empty for status updates channel. // For groups - subscriber adds signed membership bundle used by group creator
+}
+
+enum PricingModel {
+    PRICING_MODEL_FREE = 0;
+    PRICING_MODEL_MONTHLY_FEE = 1;
+}
+
+// Supported types of channel
+enum ChannelType {
+    CHANNEL_TYPE_STATUS_FEED = 0;
+    CHANNEL_TYPE_GROUP = 1;
+}
+
+// A signed immutable bundle describing a status updates channel or a group channel.
+// Designed to be made available for subscribers who have obtained channel_id.
+// Signed by channel id and user to ensure that no-one else can create a channel with the same channel id
+message ChannelBundle {
+    EntityId channel_id = 1; // Channel public key id
+    EntityId creator_id = 2; // Channel public key id
+    ChannelType channel_type = 3; // status feed or group
+    uint64 created = 4; // channel creation time
+    string description = 5; // channel desc
+    string acceptable_content_policy = 6; // creator stated acceptable content and moderation policy
+    MediaItem logo = 7; // channel logo (optional)
+    snp.payments.Address payable_address = 8; // account-payable for channel related users fees (paid content, subs, etc...)
+    snp.payments.Amount subscription_fee = 9; // Optional required monthly subscription fee for a status update channel
+    Signature signature = 10; // signature of channel_id on all above fields- proves user has private key to channel id
+    Signature creator_signature = 11; // channels' client signature on all other fields (including channel signature)
+    PricingModel pricing_model = 12; // channel pricing model
+}
+
+// Private data stored on publisher's client with mutable channel's or group's state.
+// Channel can be public or private, status update channel or a group channel
+message ChannelData {
+    ChannelBundle bundle = 1; // current channel bundle and its data
+    bool discoverable = 2; // when true, should be discoverable to anyone given client id
+    uint64 last_updated = 3; // time of last content update
+    repeated EntityId blocked_repliers = 5; // Users blocked by publisher from replying to status updates or group messages.
+    repeated ContentItem content_items = 6; // all channel content item (including replies by other non-blocked subscribers).
+    // Note: this needs to be indexed by item id and by reply_to in order to support threaded discussions and time-based fetch.
+    repeated ChannelSubscriptionRequestData sub_requests = 7; // pending requests for subscription or membership
+    repeated ChannelSubscriber subscribers = 8; // subscribers for status updates
+    GroupMembersBundle group_members = 9; // members if channel is a group
+    bytes channel_key_pair = 10; // channel id private key corresponding to channel_id so creator can sign with channel id.
+}
+
+// Data maintained by channel subscriber (or group member) client
+//
+message ChannelClientData {
+   repeated ChannelContentItem content_items = 1;
+}
+
+// A channel member
+message ChannelSubscriber {
+    EntityId user_id = 1;
+    uint64 date_subscribed = 2;
+    uint64 time_next_payment_due = 3;
+    // add receipts here for past payments
+}
+
+// A ChannelContent Item is a content item signed by the channel's creator
+message ChannelContentItem {
+    ContentItem content_item = 1;
+    Signature signature = 2; // channel creator
+}
+
+////////////// Groups specific data
+
+// A group member bundle
+message GroupMemberBundle {
+    EntityId user_id = 1;
+    EntityId group_id = 2;
+    Signature signature = 3; // user_id signature attesting it is a group member
+}
+
+// Group members bundle is shared by group creator with group members and
+// is updated with membership changes
+message GroupMembersBundle {
+    uint64 created = 1; // signature timestamp
+    EntityId group_id = 2; // group id (channel)
+    EntityId creator_id = 3; // channel's creator current client id
+    repeated GroupMemberBundle members = 4; // group members ids
+    Signature group_signature = 5; // signature of channel_id on all other fields (proves bundle author created this channel)
+    Signature creator_signature = 6; // channel's user's client signature on all other fields (proves identity of owner's client)
+}
+
+

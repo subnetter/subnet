@@ -1,0 +1,110 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.core_types;
+import "snp/payments/types.proto";
+
+//////////////////
+//
+// Basic SNP data types used in services definitions and in complex types
+//
+/////////////////
+
+// An public encryption key
+message PublicKey {
+    bytes key = 1;
+}
+
+message PrivateKey {
+    bytes key = 1;
+}
+
+message KeyPair {
+    PrivateKey private_key = 1;
+    PublicKey public_key = 2;
+}
+
+// an x2dh or x3dh pre-key
+message PreKey {
+    string x2dh_version = 1; // x2dh protocol semantic version
+    PublicKey key = 2; // public key bytes
+    uint64 key_id = 3; // unique key id. This is the id of the bundle which published this prekey
+}
+
+message PreKeypair {
+    string x2dh_version = 1; // x2dh protocol semantic version
+    KeyPair key_pair = 2; // key pair
+    uint64 key_id = 3; // unique key id
+}
+
+// A public entity such as client, group, channel or provider Id
+message EntityId {
+    PublicKey public_key = 1; // identity based on public key
+    string nickname = 2; // optional
+}
+
+message PrivateEntityId {
+    KeyPair key_pair = 1;
+    string nickname = 2;
+}
+
+message Signature {
+    uint32 scheme_id = 1;
+    bytes signature = 2;
+}
+
+message ContentItem {
+    uint64 id = 1; // unique item id
+    bytes channel_id = 2; // item's channel (when applicable)
+    uint64 created = 3; // authoring time-stamp
+    EntityId author = 4; // item's author
+    uint64 ttl = 5; // optional expiration for self-destructing messages
+    uint64 price = 6; // price for a paid content item. 0 otherwise
+    string name = 7; // item unique name;
+    repeated MediaItem media_item = 8; // actual content (multi-part, multi-mime)
+    uint64 reply_to = 9; // can be a reply to another item
+    Signature signature = 10; // on all of the above data by the AUTHOR id keypair
+}
+
+// Supported media items' media types
+enum MimeType {
+    MIME_TYPE_TEXT_UTF8 = 0;
+    MIME_TYPE_IMAGE_PNG = 1;
+    MIME_TYPE_IMAGE_GIF = 2;
+    MIME_TYPE_IMAGE_JPG = 3;
+    MIME_TYPE_VIDEO_MP4 = 4;
+    MIME_TYPE_AUDIO_AAC = 5;
+    MIME_TYPE_AUDIO_MP3 = 6;
+    MIME_TYPE_AUDIO_M4A = 7;
+}
+
+// A compression codec. Specifies the codec name and min required implementation version
+enum CompressionCodec {
+    COMPRESSION_CODEC_NONE = 0;
+    COMPRESSION_CODEC_ZLIB_0_3_0 = 1;
+    COMPRESSION_CODEC_RAR_0_1_0 = 2;
+}
+
+message MediaItem {
+    uint32 id = 1; // content unique id, for reference from other content
+    string name = 2;
+    MimeType mime_type = 3; // e.g image/gif, text/ut8, etc...
+    CompressionCodec compression = 4; // e.g. zlib/0.3.0.0 When set - content is compressed with the algo
+    bytes content = 5; // encoded content, may be compressed by stated compression algo
+}
+
+message ServiceTermsBundle {
+    EntityId provider_id = 1; // Provider public id
+    snp.payments.ServiceTerms service_terms = 2; // generic service contract for new users
+    Signature signature = 3; // bundles are self contained and are signed
+}
+
+// A set of pre-keys for an entity (provider or client)
+message EntityPreKeys {
+    EntityId entity_id = 1;
+    PublicKey pre_key = 2;
+    repeated PublicKey one_time_keys = 3;
+}
+

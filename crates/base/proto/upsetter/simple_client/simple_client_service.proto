@@ -1,0 +1,193 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package upsetter.simple_client;
+import "snp/core_types/identity_bundles.proto";
+import "snp/core_types/channels.proto";
+import "snp/core_types/types.proto";
+import "google/protobuf/empty.proto";
+
+// A simple Upsetter client grpc api simulating a real user interacting with a SNP client
+// Useful for automated integration testing which involves clients so lots of boilerplate code can be shared between
+// test scenarios.
+// API usage pattern for instant messaging: 1. set a provider. 2. set other client bundle. 3. send message(s) to other client.
+// Note the User prefix to types used here - this is used to avoid confusion with server api similar types
+service SimpleClientUserService {
+
+  // Set a provider for this client
+  rpc UserSetProvider(UserSetProviderRequest) returns (UserSetProviderResponse);
+
+  // Set other client bundle (so we can chat with him)
+  rpc UserAddOtherClientBundle(snp.core_types.ProviderSignedClientIdentityBundle) returns (UserAddOtherClientBundleResponse);
+
+  // Send a 1:1 text message to another other client on behalf of user
+  rpc UserSendTextMessage(UserSendTextMessageRequest) returns (UserSendTextMessageResponse);
+
+  // Status Updates
+  ////////////////////////
+
+  // Create a new status update channel and return its id and bundle so we can share it with other clients so
+  // they may subscribe
+  rpc UserCreateStatusUpdateChannel(UserCreateStatusUpdateChannelRequest) returns (UserCreateStatusUpdateChannelResponse);
+
+  // Subscribe client on behalf of user to a status updates channel
+  rpc UserSubscribeToStatusUpdates(UserSubscribeRequest) returns (UserSubscribeResponse);
+
+  // Unsubscribe the client on behalf of user from a channel client is subscribed to
+  rpc UserUnsubscribeFromStatusUpdates(UserUnsubscribeRequest) returns (UserUnsubscribeResponse);
+
+  // Publish a new status update, a reply to a status update, a new group message or reply to a group message
+  rpc UserNewPost(UserNewPostRequest) returns (UserNewPostResponse);
+
+  // Groups
+  ////////////////////
+
+  // Create a new group channel and return its id and bundle so we can share it with other clients so
+  // they may subscribe
+  rpc UserCreateGroup(UserCreateGroupRequest) returns (UserCreateGroupResponse);
+
+  // A request from a user to group creator to join a groups - for now it is always accepted
+  rpc UserJoinGroup(UserJoinGroupRequest) returns (UserJoinGroupResponse);
+
+  // User asks creator to leave group
+  rpc UserLeaveGroup(UserLeaveGroupRequest) returns (UserLeaveGroupResponse);
+
+  // Pad Content Items
+  //////////////
+
+  // Create a new paid content item
+  rpc UserCreatePaidItem(UserCreatePaidItemRequest) returns(UserCreatePaidItemResponse);
+
+  // Buy a paid content item published by another client on behalf of user
+  rpc UserBuyPaidItem(UserBuyPaidItemRequest) returns (UserBuyPaidItemResponse);
+
+  rpc UserListPaidContentItems(UserListPaidContentItemsRequest) returns (UserListPaidContentItemsResponse);
+
+  // Name Service
+  rpc SetBlockchainService(SetBlockchainServiceRequest) returns (google.protobuf.Empty);
+
+}
+
+message SetBlockchainServiceRequest {
+  snp.core_types.DialupInfo dialup_info = 1;
+}
+
+
+/////////// status updates ////////////////////
+
+message UserSubscribeRequest {
+  // Specify channel bundle for subscription (in product it should be stored via kad and queryable by channel_id
+  snp.core_types.ChannelBundle channel_bundle = 1;
+}
+
+message UserSubscribeResponse {
+
+}
+
+message UserUnsubscribeRequest {
+  // Specify channel bundle to unsubscribe from (in product it should be stored via kad and queryable by channel_id
+  snp.core_types.ChannelBundle channel_bundle = 1;;
+}
+
+message UserUnsubscribeResponse {
+}
+
+// Publish a new simple text status update, a replay to a status update, a group message or a reply to a group message
+// Implementation in SimpleClient should do the correct thing based on whether user is a the channel's creator or not.
+message UserNewPostRequest {
+  snp.core_types.EntityId channel_id = 1;
+  string text = 2;
+  uint64 reply_to = 3; // id of content item this post is a reply to
+}
+
+message UserNewPostResponse {
+  uint64 post_id = 1; // the unique generated post id. useful so integration tests can send a reply for the post
+}
+
+message UserCreateStatusUpdateChannelRequest {
+  string channel_name = 1;
+}
+
+message UserCreateStatusUpdateChannelResponse {
+  snp.core_types.ChannelBundle channel_bundle = 1;
+}
+
+message UserAddOtherClientBundleResponse {
+}
+
+message UserSetProviderRequest {
+   snp.core_types.DialupInfo dialup_info = 1;
+}
+
+message UserSetProviderResponse {
+  // the provider signed client bundle that was also sent over the p2p network for providers close to client
+  snp.core_types.ProviderSignedClientIdentityBundle client_bundle = 1;
+}
+
+message UserSendTextMessageRequest {
+  snp.core_types.EntityId other_client_id = 1;
+  string user_text = 2;
+  uint64 reply_to = 3;
+}
+
+message UserSendTextMessageResponse {
+  uint64 message_id = 1; // the unique generated post id. useful so integration tests can send a reply for the message
+}
+
+///// Groups
+
+message UserCreateGroupRequest {
+  string group_name = 1;
+}
+
+message UserJoinGroupResponse {
+}
+
+message UserCreateGroupResponse {
+  snp.core_types.ChannelBundle channel_bundle = 1;
+}
+
+message UserJoinGroupRequest {
+  snp.core_types.ChannelBundle channel_bundle = 1;
+}
+
+message UserLeaveGroupRequest {
+  snp.core_types.ChannelBundle channel_bundle = 1;;
+}
+
+message UserLeaveGroupResponse {
+}
+
+
+//// Paid content items
+
+message UserCreatePaidItemRequest {
+  uint64 price = 1;
+  string name = 2;
+  string content = 3; // string content only for now
+}
+
+message UserCreatePaidItemResponse {
+  uint64 item_id = 1;
+}
+
+message UserBuyPaidItemRequest {
+  snp.core_types.EntityId seller_client_id = 1;
+  uint64 item_id = 2;
+  uint64 price = 3;
+}
+
+message UserBuyPaidItemResponse {
+}
+
+message UserListPaidContentItemsRequest {
+  snp.core_types.EntityId seller_client_id = 1;
+}
+
+message UserListPaidContentItemsResponse {
+}
+
+/////////////////
+

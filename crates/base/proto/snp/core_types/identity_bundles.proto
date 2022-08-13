@@ -1,0 +1,94 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.core_types;
+import "snp/core_types/types.proto";
+import "snp/payments/types.proto";
+
+////////////////////
+//
+// SNP - Identity Bundles
+//
+///////////////////////
+
+// Public service provider identity bundle.
+// See X2dh protocol for additional details.
+// Only include public data
+message ProviderIdentityBundle {
+    uint64 time_stamp = 1; // unique publishing time per provider
+    EntityId provider_id = 2; // This is IKb in x2dh terms for Bob
+    snp.payments.Address address = 3; // Provider account's address for payments
+    repeated DialupInfo dial_up_info = 4; // node dial-up info
+    PreKey pre_key = 5; // current x2dh pre-key (SPKb in x2dh protocol)
+    repeated PreKey one_time_keys = 6; // x2dh one-time keys (optional)
+    MediaItem profile_image = 7; // profile image
+    uint64 current_bond_id = 8; // provider current bond id on L1
+    Signature provider_signature = 10; // provider attests node id (node belongs to provider)
+    uint32 net_id = 11; // net-id of the SNP network that this identity is for
+}
+
+// Provider identity bundle with private data corresponding to the public data.
+// Private data includes private keys for public keys shared via the public bundle
+// todo: move this to upsetter package - this is a server implementation data object not an SNP type.
+message PrivateProviderIdentityBundle {
+    ProviderIdentityBundle public_bundle = 1;
+    KeyPair provider_id_keypair = 2;
+    PrivateKey pre_key = 3; // current x2dh x25519 pre-key private (SPKb in x2dh protocol)
+    repeated KeyPair one_time_keys_pairs = 4; // x2dh one-time key-pairs (optional)
+}
+
+// Client published bundle specifying current provider and x2dh pre-keys
+// Client represents a pseudo-anon identity that has its private key.
+message ClientIdentityBundle {
+    uint64 time_stamp = 1;
+    EntityId client_id = 2; // cryptographic id - public key - ika...
+    snp.payments.Address address = 3; // client current wallet address for payments
+    ProviderIdentityBundle provider_bundle = 4; // client's current provider
+    PreKey pre_key = 5; // client's current x2dh pre-key
+    repeated PreKey one_time_keys = 6; // x2dh one-time keys (optional)
+    MediaItem profile_image = 7; // profile data. e.g. profile image
+    Signature signature = 8; // client signature on all other data fields
+    uint32 net_id = 9; // net-id of the SNP network that this identity is for
+}
+
+// Provider client service data - not API specific - move to data objects package
+message ClientServiceData {
+    uint64 service_started = 1;
+    uint64 service_ended = 2;
+    ClientIdentityBundle client_identity_bundle = 3;
+}
+
+// Provider published client bundle - includes provider signature on the data
+message ProviderSignedClientIdentityBundle {
+    ClientIdentityBundle client_bundle = 1;
+    Signature signature = 2; // provider attests all data
+}
+
+/// basic types
+
+enum ApiEndPoint {
+    API_END_POINT_UNSPECIFIED = 0;
+    API_END_POINT_GRPC_WEB2 = 1; // grpc over web2 - connection not secure by TLS - for testing
+    API_END_POINT_GRPC_WEB2S = 2; // grpc over web2 - connection secured by TLS - for production
+    API_END_POINT_JSON_HTTP = 3; // grpc json gateway over http - insecure for testing
+    API_END_POINT_JSON_HTTPS = 4; // grpc json gateway over https - for production
+}
+
+// Providers p2p protocol dialup info
+message DialupInfo {
+    ApiEndPoint end_point = 1; // endpoint type
+    string api_version = 2; // api semantic version
+    string ip_address = 3; // public server domain name or ip address
+    uint32 port = 4; // endpoint port
+    uint32 net_id = 5; // SNP network id that this api is for
+    string name = 6; // provider chosen name
+}
+
+// Provider info includes public key and dialup info
+message ProviderNetInfo {
+    EntityId provider_id = 1; // provider id
+    DialupInfo dial_up_info = 2; // provider dialup info
+    Signature signature = 3; // data must be signed by provider
+}

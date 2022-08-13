@@ -1,0 +1,53 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.payments;
+import "snp/payments/types.proto";
+
+// SNP Protocol service for users payments with Service provider.
+// Note that new users submit a transaction to start service via the public cryptocurrency api
+// provided by Cryptocurrency Nodes
+///////////////////////////
+
+// A request to pay provider by a serviced user
+message PaymentRequest {
+  Payment payment = 1;
+}
+
+message PaymentResponse {
+  enum Result {
+    ACCEPTED = 0;
+    REJECTED_INSUFFICIENT_FUNDS = 1; // client balance too low to process the payment
+    REJECTED_INTERNAL_ERROR = 2;
+  }
+  Result result = 1;
+  Amount balance = 2;          // user's current balance with provider after the charge
+  bool check_balance = 3;      // requests the user to check balance as it becomes low
+}
+
+////////////////////////////
+
+// Request to get the current service contract for the user
+message ServiceContractRequest {
+}
+
+// Current user service prices
+message ServiceContractResponse {
+  Amount balance = 1; // current user balance
+  ServiceTerms service_terms = 2; // current user's service terms
+}
+
+/////////////////////
+
+// Request client bill. Currently from service start time
+message GetBillRequest {
+}
+
+// Response includes a newly generated bill that covers all user payments, current balance and service contract
+message GetBillResponse {
+  Bill bill = 1;
+}
+
+/////////////////////////

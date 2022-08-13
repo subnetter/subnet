@@ -1,0 +1,83 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.payments;
+
+//// Basic Cryptocurrency and Payments Types
+
+// Supported built-in coin types
+enum CoinType {
+  COIN_TYPE_CORE = 0;   // $SNP
+  COIN_TYPE_STABLE = 1; // $SNPS
+  // other coin types can be added in future versions of the protocol
+}
+
+// An address is an account id
+message Address {
+  // 20 bytes unique address derived from public key
+  bytes data = 1;
+}
+
+// A non-negative coin amount
+message Amount {
+  uint64 value = 1;
+  CoinType coin_type = 2;
+}
+
+// TODO: think about user adding contract id when doing a transaction to start a service with provider. evidence he agrees to the terms.
+
+enum PricingModel {
+  PAY_PER_USAGE = 0;
+  PAY_FIXED_MONTHLY = 1;
+}
+
+message ServiceTerms {
+  uint64 id = 1; // unique referencable contract id.
+  uint64 created = 2; // date created. valid from this date
+  uint64 valid_until = 3; // end of time period provider commits to provide service with these prices
+  PricingModel pricing_model = 4; // pay per usage or monthly fixed
+  bytes  user_id = 5; // Contract is only for this user. 0 for contract for new users.
+  // pricing
+  uint32 free_trial_period = 6;  // free trial period for new users in days
+  Amount min_balance = 7; // required min balance
+  Amount max_balance = 8; // required max balance (for user tx when balance go below min)
+  Amount balance = 9; // user's balance at date of message creation when terms are for an existing user
+  Amount routing_msg_base_cost = 10; // base cost for message routing
+  Amount routing_msg_cost_per_byte = 11; // cost for message routing per byte
+  Amount data_store_per_byte = 12; // store per byte per monthly cost
+  Amount registration_fee = 13; // Optional registration fee
+
+  Amount monthly_fixed_fee = 14; // option for fixed monthly fee instead of pay-per-usage
+  uint64 max_user_storage_space = 15; // max storage per user limit in bytes
+  uint64 max_file_size = 16; // max supported routed file size in bytes
+  Address payable_account = 17; // provider's blockchain account to receive transactions
+}
+
+message Payment {
+  uint64 time_stamp = 1; // time of payment issued
+  repeated uint64 item_ids = 2; // on or more invoice id, or item id that this payment is for
+  bytes user_id = 3; // User public id
+  bytes provider_id = 4; // Provider public id
+  Amount amount = 5; // amount to be paid for provider
+  bytes signature = 6; // user's signature on all above data
+}
+
+message TransactionId {
+  bytes id = 1;
+}
+
+message Bill {
+  uint64 generated = 1; // bill generation time
+  Amount balance = 2; // current user balance
+  repeated TransactionId credit_transactions_ids = 3; // all user transaction that credited the account
+  repeated BillSection section = 4; // list of service contracts and user-signed payments under each
+  bytes signature = 5; // provider signature so this message is self-contained
+}
+
+message BillSection {
+  ServiceTerms service_terms = 1; // user's service terms
+  repeated Payment payments = 2; // payments user made under the contract
+}
+

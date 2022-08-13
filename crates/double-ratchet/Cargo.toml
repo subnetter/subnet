@@ -1,0 +1,39 @@
+[package]
+name = "double-ratchet"
+version = "0.1.0"
+authors = ["subnetter <subnetter@pm.me>"]
+edition = "2018"
+
+[dependencies]
+base = { path = "../base" }
+crypto = { path = "../crypto" }
+
+serde = { version = "1.0.125", features = ["derive"] }
+serde_bytes = "0.11.5"
+bytes = { version = "1", features = ["serde"] }
+bincode = "1.3.3"
+
+curve25519-dalek = "3"
+clear_on_drop = "0.2"
+sha2 = "*"
+async-trait = "0.1.41"
+futures = "0.3.5"
+log = "*"
+env_logger = "*"
+anyhow = "1.0"
+
+[dependencies.rand_core]
+version = "0.5"
+default-features = false
+
+[dependencies.rand]
+version = "0.6"
+features = ["i128_support"]
+
+[dependencies.x25519-dalek]
+version = "1"
+default-features = false
+features = ["std", "u64_backend", "serde"]
+
+[dependencies.ed25519-dalek]
+version = "1"

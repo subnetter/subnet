@@ -1,0 +1,7 @@
+{
+    "client_name": "A",
+    "grpc_server_port": 3033,
+    "db_name": "client_a_db"
+}
+
+

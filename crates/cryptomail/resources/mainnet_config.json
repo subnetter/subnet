@@ -1,0 +1,9 @@
+{
+  "peer_name": "CryptoMail Service Mainnet",
+  "host_name": "0.0.0.0",
+  "grpc_server_port": 8888,
+  "grpc_admin_port": 9888,
+  "db_name": "cryptomail_db",
+  "net_id": 0,
+  "min_deposit_confirms": 20
+}

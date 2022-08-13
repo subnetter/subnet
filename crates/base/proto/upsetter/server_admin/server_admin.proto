@@ -1,0 +1,23 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+import "snp/core_types/identity_bundles.proto";
+
+package upsetter.server_admin;
+
+// An API service for server administration
+
+service ServerAdminService {
+  // set a network name service
+  rpc SetBlockchainService(snp.core_types.DialupInfo) returns (google.protobuf.Empty);
+
+  // return list of all serviced clients and summary of their data
+  rpc GetClients(google.protobuf.Empty) returns  (GetClientsResponse);
+}
+
+message GetClientsResponse {
+
+}

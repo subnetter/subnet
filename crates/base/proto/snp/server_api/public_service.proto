@@ -1,0 +1,48 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.server_api;
+import "snp/core_types/types.proto";
+import "snp/payments/types.proto";
+import "snp/core_types/identity_bundles.proto";
+
+// Public services provided by a provider to anyone on the network.
+// Clients, service providers or other types of nodes
+// Implemented over messaging_service which provides DR session security for this message
+
+// Get provider's current service terms bundle (might include new pre-keys)
+// Clients should use GetTermsOfServiceRequest() and GetTermsOfServiceResponse messages defined in the messaging_service
+
+// Caller requests to start being serviced by this provider.
+// This should start the free trial period if it exists.
+// By calling this method the client agrees to the provider terms of service
+// as provided in provider bundle
+message StartServiceRequest {
+    snp.core_types.ClientIdentityBundle bundle = 1;
+    snp.payments.Payment payment = 2; // must be provided if provided requests a free to start service
+    uint64 service_contract_id = 3;
+    snp.payments.PricingModel contract_options = 4; // fixed monthly fee or pay-per-usage
+}
+
+// Returns a signed client id bundle if accepted this client request
+// or an error status code
+message StartServiceResponse {
+    snp.core_types.ProviderSignedClientIdentityBundle bundle = 1;
+}
+
+// Request to get the most recent client bundle of a client provided by this provider
+message GetClientPreKeysRequest {
+    snp.core_types.EntityId client_id = 1;
+}
+
+// Provider response. By returning a client's bundle that is provided by this provider,
+// the provider asserts that it is its service provider.
+// The provider id is signed by the client in the response envelope so client all asserts that
+// it is provided by the provider
+message GetClientPreKeysResponse {
+    snp.core_types.ProviderSignedClientIdentityBundle client_bundle = 1;
+}
+
+///////

@@ -1,0 +1,343 @@
+syntax = "proto3";
+package snp.server_api;
+import "snp/core_types/types.proto";
+import "snp/core_types/identity_bundles.proto";
+import "snp/payments/types.proto";
+
+/////////////////
+//
+// Core SNP messages used in MessagingService)
+//
+/////////////////
+
+// A DR session header - see DR protocol def of HEADER(dh,pn,n)
+message DRSessionHeader { // DR session header
+    uint64 session_id = 1; // Unique session id - first created by session initiator. Used by other party to retrieve the session from storage when it needs to use it.
+    snp.core_types.PublicKey dr_pub_key = 2; // the public ratchet key currently in use by the sender in a dr session
+    uint32 prev_count= 3;  // the number of messages in the previous sending chain (PN in dr paper)
+    uint32 count = 4; // the number of messages in the current sending chain
+}
+
+// A simple message has a DR header and an encrypted TypedMessage, encrypted using DR. See DR protocol for more info.
+message Message {
+    DRSessionHeader header = 1; // DR protocol unencrypted header
+    bytes enc_typed_msg = 2; // a DR encrypted TypedMessage
+}
+
+// MessageType specifies the run-time type of a TypedMessage
+// Used for dynamic decoding of messages to a runtime typed object in code.
+// New protocol messages type ids need to be added here
+enum MessageType {
+
+    //
+    // Public service protocol messages (in a DR session)
+    /////////////////////////////
+
+    // A request to send provider's signed terms of service bundle
+    MESSAGE_TYPE_SERVICE_TERMS_REQUEST = 0;
+    MESSAGE_TYPE_SERVICE_TERMS_RESPONSE = 1;
+
+    // A request from a client to start getting serviced by a provider
+    MESSAGE_TYPE_START_SERVICE_REQUEST = 2;
+    MESSAGE_TYPE_START_SERVICE_RESPONSE = 3;
+
+    //
+    // Provider messaging service protocol messages
+    // Clients send these messages to their providers while being serviced
+    /////////////////////////////
+
+    // A request from a client to stop being provided by a provider
+    MESSAGE_TYPE_STOP_SERVICE_REQUEST = 4;
+    MESSAGE_TYPE_STOP_SERVICE_RESPONSE = 5;
+
+    // A request from a client to its provider to forward a message to another client via that client's provider
+    MESSAGE_TYPE_FORWARD_MESSAGE_REQUEST = 6;
+    MESSAGE_TYPE_FORWARD_MESSAGE_RESPONSE = 7;
+
+    // A client request to receive to a stream messages designated to it from other entities via its provider
+    // Client unsubscribes by closing his end of the stream
+    MESSAGE_TYPE_SUBSCRIBE_CLIENT_MESSAGES = 8;
+
+    //
+    // Provider to provider protocol messages
+    /////////////////////////////
+
+    // A request from a provider to another provider to route a message to one of its client from one of the sender's provider clients
+    MESSAGE_TYPE_ROUTE_MESSAGE_REQUEST = 9;
+    MESSAGE_TYPE_ROUTE_MESSAGE_RESPONSE = 10;
+
+    //
+    // Client to Client messages
+    // These messages are routed from a client to another client
+    /////////////////////////////
+
+    // A 1:1 text message from a client to another client
+    MESSAGE_TYPE_TEXT_MESSAGE_REQUEST = 11;
+    MESSAGE_TYPE_TEXT_MESSAGE_RESPONSE = 12;
+
+    // Client request to subscribe to a client channel such as a status updates channel or to join a group
+    MESSAGE_TYPE_CHANNEL_SUBSCRIBE_REQUEST = 13;
+    MESSAGE_TYPE_CHANNEL_SUBSCRIBE_RESPONSE = 14;
+
+    // client request to subscribe to a client channel such as a status updates channel or to leave a group
+    MESSAGE_TYPE_CHANNEL_UNSUBSCRIBE_REQUEST = 15;
+    MESSAGE_TYPE_CHANNEL_UNSUBSCRIBE_RESPONSE = 16;
+
+    // a new channel message from channel creator client to a subscriber (or group member) client
+    MESSAGE_TYPE_CHANNEL_MESSAGE = 17;
+
+    // a request by a client to post a reply on a channel post a message to a group in a channel he doesn't own
+    // message is sent by author to the channel creator
+    MESSAGE_TYPE_CHANNEL_MESSAGE_REQUEST = 18;
+    MESSAGE_TYPE_CHANNEL_MESSAGE_RESPONSE = 19;
+
+    // A client is requesting to purchase a paid content item published by another client
+    MESSAGE_TYPE_BUY_ITEM_REQUEST = 20;
+
+    // Response should have include item if requesters paid for it.
+    MESSAGE_TYPE_BUY_ITEM_RESPONSE = 21;
+
+    // A client is requesting to get a list of paid items currently for sale by another client
+    MESSAGE_TYPE_LIST_PAID_ITEMS_REQUEST = 22;
+
+    // Response returns a list of meta-data about paid content items available for sale by a client
+    MESSAGE_TYPE_LIST_PAID_ITEMS_RESPONSE = 23;
+
+    // Metadata about messages that a provider has for a client
+    MESSAGE_TYPE_CLIENT_MESSAGES_METADATA = 24;
+
+    // A request from client to its provider to deliver messages it has for it
+    MESSAGE_TYPE_DELIVER_CLIENT_MESSAGES_REQUEST = 25;
+
+    // A response from provider to client request with the requested messages
+    MESSAGE_TYPE_DELIVER_CLIENT_MESSAGES_RESPONSE = 26;
+
+    // A request to get a provider's current id bundle
+    MESSAGE_TYPE_GET_PROVIDER_BUNDLE_REQUEST = 27;
+
+    // Get provider bundle response
+    MESSAGE_TYPE_GET_PROVIDER_BUNDLE_RESPONSE = 28;
+
+    // A request to get a client's current id bundle
+    MESSAGE_TYPE_GET_CLIENT_BUNDLE_REQUEST = 29;
+
+    // Client id bundle response
+    MESSAGE_TYPE_GET_CLIENT_BUNDLE_RESPONSE = 30;
+
+    // A request to store encrypted client data on provider (used to backup user data when migrating between devices)
+    MESSAGE_TYPE_STORE_DATA_REQUEST  = 31;
+
+    // Response to a store data request
+    MESSAGE_TYPE_STORE_DATA_RESPONSE  = 32;
+
+    // A request to read previously stored client data
+    MESSAGE_TYPE_READ_DATA_REQUEST  = 33;
+
+    // Read data response
+    MESSAGE_TYPE_READ_DATA_RESPONSE  = 34;
+
+    // A ping request to a remote node, asking for its up-to-date dialup info
+    MESSAGE_TYPE_PING_NODE_REQUEST = 35;
+
+    // A ping response including new node dialup info (for follow-up requests)
+    MESSAGE_TYPE_PING_NODE_RESPONSE = 36;
+
+
+    ////////////////////
+    //
+    // IMPORTANT: add entry for new SNP message or higher-level protocol messages that need to be self-described.
+    //
+    ////////////////////
+
+}
+
+// Typed message is a self-described typed message designated to a specific receiver authenticated by a sender.
+// It enables dynamic decoding of a proto-encoded messages to a specific runtime type which is needed as protobuf 3
+// does not support self-describing messages.
+message TypedMessage {
+    uint64 time_stamp = 1; // msg creation time signed by sender (to avoid replay later on)
+    MessageType msg_type = 2; // message type (enum)
+    bytes message = 3; // Serialized protobuf message of msg_type
+
+    // The fields below are here here to protect them from being transferred as cleartext over the network in message wrappers.
+    snp.core_types.EntityId receiver = 4; // Message designated receiver id (long term public key) - used to prevent fake messages by sender sent to other receivers
+    snp.core_types.EntityId sender = 5; // Message sender id (long term public key)
+    snp.core_types.Signature signature = 6; // Message sender signature on all other fields - authenticating the msg
+}
+
+// A 2-party DR session request using the X2DH protocol. Can be sent by Alice to Bob.
+// Can also be sent as an inner message sent from Alice to Bob designated to Charlie.
+// So receiver may be Bob or Charlie. DR is bootstrapped using shared secret and AD computed via the X2DH protocol.
+// Receiver should start a DR session with caller, decrypt the encrypted message
+// extract the caller id from the enc payload, verify signature on internal message
+// and only then associate DR session with the public long term id of the caller.
+// this is done so we don't leak sender public id in this clear-text network message.
+message NewSessionRequest {
+    uint64 time_stamp = 1; // request time signed by sender (to avoid replays at much later time)
+    snp.core_types.EntityId receiver = 2; // Receiver's IKa - long term public key
+    snp.core_types. PublicKey sender_ephemeral_key = 3; // Alice's x25519 protocol pub key 2. see X2DH protocol.
+    uint64 receiver_bundle_id = 4; // Receiver's bundle id used by sender. Also identifies the pre-key.
+    uint64 receiver_one_time_prekey_id = 5; // one time pre-key Bob should use for session (optional)
+    Message message = 6; // First message from Alice to Receiver. Enc in DR protocol in a new DR session Alice created with Receiver.
+    snp.core_types.Signature sender_signature = 7; // on all other data (with long-term id key inside message)
+    uint32 net_id = 8; // net id - designed to avoid mixing of p2p messages between 2 different SNP networks
+    string protocol_version = 9; // Snp protocol semantic version number implemented by caller
+}
+
+// A DDMessage is a NewSessionRequest or a Message.
+message DRMessage {
+    oneof data {
+        NewSessionRequest new_session_request = 1;
+        Message message = 2;
+    };
+}
+
+// Metadata about a DRMessage designated to a client that is stored
+// on provider for client delivery
+// Note that provider doesn't have by design any additional message meta-data
+message ClientMessageMetadata {
+    // unique id created by provider who stores a message to client by this id. Also used in receipt
+    uint64 id = 1;
+    // Time of reception by provider
+    uint64 received_date = 2;
+    // provider price to send message to the client
+    uint64 price = 3;
+    // message byte size
+    uint64 size = 4;
+    // how long will server hold this message for client before deleting it
+    uint64 ttl = 5;
+}
+
+// A list of messages metadata
+// Sent from provider to its client so client can decide which messages to request
+message ClientMessagesMetadata{
+    repeated ClientMessageMetadata messages_metadata = 1;
+}
+
+// Receiver returns a response message in the new DR session between the parties based on the message that the sender sent
+// or an error status if it failed or refused to create new DR session between the parties.
+message NewSessionResponse {
+    Message message = 1;
+}
+
+// A message request between two parties using an existing DR session between them
+message MessageRequest {
+    Message message = 1; // message enc in Dr session between sender and receiver
+}
+
+// A response to a MessageRequest
+message MessageResponse {
+    Message message = 1; // the response message, encoded in the DR session between the parties
+}
+
+// A request by a client to subscribe to messages designated to him that reached his provider
+// Note that for now we don't let clients start a new DR session by sending a DRMessage
+// so they always have to send a Message (and not a NewSessionRequest) here
+message SubscribeToClientMessagesRequest {
+    Message dr_message = 1;
+}
+
+message SubscribeToClientMessagesRequestPayload {
+    // empty message
+}
+
+// A request to get the current provider identity bundle
+message GetIdentityBundleRequest {
+    string protocol_version = 1; // Snp protocol semantic version number implemented by caller
+}
+
+message GetIdentityBundleResponse {
+    snp.core_types.ProviderIdentityBundle bundle = 1;
+}
+
+message GetTermsOfServiceRequest {
+    string promo_code = 1;
+}
+
+message GetTermsOfServiceResponse {
+    snp.core_types.ServiceTermsBundle terms = 1;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// SNP - Messages routing protocol
+//
+// The api is implemented by request and a response message pairs.
+// Caller sends a request and receives a response or a status error message back from the receiver.
+// All messages are sent as TypedMessages using core SNP protocol by clients and providers to a provider
+//
+//////////////////////////////////////////////////////////////////////////////////////
+
+// A client A requests for its service provider (SA) to forward a message to another provider.
+// Forward_message is encrypted with eph-dh to the other service provider (SB).
+// This message is implemented by providers that accept routing messages for their clients.
+// See the basic user-to-user messaging flow for more info.
+message RouteMessageRequest {
+    ForwardMessageRequest forward_message = 1; // the message for the destination service provider (SB)
+    snp.core_types.DialupInfo dialup_info = 2; // destination service provider dial-up info (temp here)
+}
+
+message RouteMessageResponse {
+    // empty as it only includes status
+}
+
+////////////////////////////////
+
+// A request to a provider to send a message to one of its serviced clients.
+// Clients use this to send a message to another client serviced by the same provider
+message SendMessageToServicedClientRequest {
+    DRMessage dr_message = 1; // new session request or message to serviced client
+}
+
+message SendMessageToServicedClientResponse {
+}
+/////////////////////////////////
+
+// A request from client to deliver messages designated to it from its provider
+// Includes a receipt for te messages delivery price
+message DeliverClientMessagesRequest {
+    snp.payments.Payment payment = 1; // payment include item ids
+}
+
+// A response from a server to deliver messages to a client. Includes the receipt id of the client's payment
+// and the full messages content it has pending for delivery to the client.
+message DeliverClientMessagesResponse {
+    uint64 receipt_id = 1;
+    repeated DRMessage messages = 2;
+}
+
+////////////////////////////////
+
+
+// The sender is requesting the receiver to forward the message to one of the entities it is providing a service for.
+// Payload is encrypted using key and ad obtained from EDH and can be a NewSessionRequest sent to a client that
+// the receiver is providing service for or a Message to that client.
+// Sender should create a new ephemeral key for each such message and destroy the private key once
+// the message was sent - it should be a one time key
+// >>> there is no DR session created between sender and receiver only a 1 time key to decrypt the payload
+// The enc/dec key is obtained by doing DH with receiver public pre-key and sender ephemeral key
+message ForwardMessageRequest {
+    snp.core_types.EntityId receiver = 1; // Provider receiver id - long term public key
+    uint64 receiver_bundle_id = 2; // Receiver's bundle id used by sender. Also identifies the pre-key.
+    snp.core_types.PublicKey sender_ephemeral_key = 3; // Sender's x25519 protocol pub key. see 2XDH protocol
+    bytes enc_payload = 4; // binary ForwardMessagePayload message
+}
+
+// Payload is a NewSessionRequest or a Message request
+// to another entity that the ForwardMessage receiver
+message ForwardMessagePayload {
+    snp.core_types.EntityId receiver = 1; // we need this because Message doesn't have receiver id in it and provider needs it.
+    DRMessage dr_message = 2;
+}
+
+// The response just indicates a status to the sender who forwarded the message to the receiver
+// It is protected with the channel the sender rand the receiver have. e.g. a DR session.
+// So the response can be a DR-protected response... e.g. a Message with this as its internal
+// typed message
+message ForwardMessageResponse {}
+
+
+////////////////////////////////
+
+
+

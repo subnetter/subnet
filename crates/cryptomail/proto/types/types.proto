@@ -1,0 +1,148 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package types;
+
+message PublicKey {
+  bytes key = 1;
+}
+
+message PrivateKey {
+  bytes key = 1;
+}
+
+message Keypair {
+  bytes private_key = 1;
+  bytes public_key = 2;
+}
+
+// an eth address
+message EthAddress {
+  bytes bytes = 1;
+}
+
+// An x25519 public key used for DH
+message PreKey {
+  bytes key = 1;
+  uint32 id = 2; // user generated id so client can keep track of multiple pre-keys when user decides to recycle the key
+}
+
+// A collection of PreKeys
+message PreKeys {
+  repeated PreKey pre_keys = 1;
+}
+
+// Currency enum includes all supported payment tokens
+enum Token {
+  TOKEN_ETH = 0;
+  TOKEN_USDC = 1;
+  TOKEN_USDT = 2;
+  TOKEN_DAI = 3;
+}
+
+message Amount {
+  Token token = 1;
+  string amount = 2; // we use strings to escape numbers and use bigInts from strings
+}
+
+message Payment {
+  Amount amount = 1;
+  bytes transaction_id = 2; // deposit for thread transaction id
+  PaidActionType paid_action_type = 3; // the action this payment is for
+}
+
+// A uniquely global message id is built from unique global thread id and and a message id local to the thread
+message MessageId {
+  bytes message_thread_id = 1; // 8 bytes / uint64 client generated, must be unique in the thread's context only
+  bytes thread_id = 2; // 8 bytes / uint64 must be globally unique obtained from server
+}
+
+// an 8 bytes globally unique thread id
+message ThreadId {
+  bytes id = 1;
+}
+
+enum PaidActionType {
+  PAID_ACTION_TYPE_UNSPECIFIED = 0;
+  PAID_ACTION_TYPE_OPEN = 1;  // payment for opening and reading a message
+  PAID_ACTION_TYPE_REPLY = 2; // payment for replying to a message
+  PAID_ACTION_TYPE_WATCH_VIDEO = 3; // payment for watching a short <5 minute video
+  PAID_ACTION_TYPE_5_MIN_ZOOM = 4; // payment for participating in a 5 min zoom
+  PAID_ACTION_TYPE_10_MIN_ZOOM = 5; // payment for participating in a 10 min zoom
+  PAID_ACTION_TYPE_20_MIN_ZOOM = 6; // payment for participating in a 20 min zoom
+}
+
+message PaidAction {
+  PaidActionType paid_action_type = 1;
+  Amount price = 2;
+}
+
+// Settings are user updatable data
+// User must sign
+message PaymentSettings {
+  EthAddress eth_address = 1; // for payments to this user
+  repeated PaidAction paid_actions = 2;
+  bytes eth_signature = 3; // An eth ECDSA eth1.x signature (r,s, v) on the above data. Allows to recover address of signer from sig. Proves signer owns eth_address
+}
+
+// information about an on-chain deposit state
+message DepositConfirmation {
+  types.MessageId message_id = 1; // unique message id (thread_id || msg_id)
+  Amount amount = 2; // deposit amount
+  EthAddress from = 3; // tx originator (depositor)
+  EthAddress to = 4; // deposit credited to
+  uint64 block_num = 5; // block num
+  bytes  block_hash = 6; // tx block hash
+  uint64 confirmations = 7; // number of confirmations for block
+  uint64 block_time = 8; // timestamp of block if mined
+}
+
+// todo: add following string fields: co name, position and user's full name.
+message PublicAccountInfo {
+  string name = 1; // account's name. Can be an eth name such as upsetter.eth. Unique in the system
+  string full_name = 2; // optional full name
+  string location = 3; // world location
+  types.PublicKey public_key = 4; // account's public key - client generated pair
+  types.PreKey pre_key = 5; // an x25519 (DH exchange key) wrapper. Can be used to send messages to account
+  string eth_name = 6; // eth ens_name for transfers. Must be same as eth_address provided in PaymentSettings
+  string profile = 7; // short descriptive text + emojis
+  string org_name = 8; // company or org name
+  string position = 9; // position in org or company
+  string profile_image_url = 10; // main large avatar image (transparent, square)
+  string small_profile_image_url = 11; // small avatar image (square, transparent)
+  string custom_profile_background_image_url = 12; // custom profile screen background image
+  repeated WebResource profile_urls = 13; // link-tree: website, linkedIn, twitter, etc...
+  PaymentSettings payment_settings = 14;
+  bytes signature = 15; // signature of account holder on above info
+}
+
+// Web resources recognized by type
+enum WebResourcesTypes {
+  WEB_RESOURCES_TYPES_UNKNOWN = 0;
+  WEB_RESOURCES_TYPES_WEBSITE = 1;
+  WEB_RESOURCES_TYPES_TWITTER = 2;
+  WEB_RESOURCES_TYPES_TELEGRAM = 3;
+  WEB_RESOURCES_TYPES_LINKEDIN = 4;
+}
+
+message WebResource {
+  WebResourcesTypes web_resource_type = 1;
+  string name = 2;
+  string url = 3;
+}
+
+enum MimeType {
+  MIME_TYPE_TEXT_UTF8 = 0;
+  MIME_TYPE_IMAGE_PNG = 1;
+  MIME_TYPE_IMAGE_JPG = 2;
+  MIME_TYPE_IMAGE_GIF = 3;
+  MIME_TYPE_TEXT_MD = 4;  // utf8 md text format
+}
+
+enum Compression {
+  COMPRESSION_UNCOMPRESSED = 0;
+  COMPRESSION_ZIP = 1;
+}
+

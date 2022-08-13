@@ -1,0 +1,55 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package api;
+import "api/api_types.proto";
+
+service CryptomailApiService {
+
+  // Create a new user account
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+
+  // Update existing account settings
+  rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
+
+  // Delete account and all account data
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+
+  // Gets most recent Account data and one or more account threads-box. e.g. Inbox, Archive, Sent.
+  // Called by users to view changes in their account (e.g. reputation) in receive updated thread-boxes
+  // For this version we return messages from the server for the each thread in each thread-box. In future
+  // release clients will query the server for a batch of message ids and will have a local store of messages by id
+  // messages are immutable and easily cacheable in clients e.g. local browser store
+  rpc GetThreadBoxes(GetThreadBoxesRequest) returns (GetThreadBoxesResponse);
+
+  // Open a message
+  rpc OpenMessage(OpenMessageRequest) returns (OpenMessageResponse);
+
+  // Reply to a message
+  rpc Reply(ReplyRequest) returns (ReplyResponse);
+
+  // Move a thread from Inbox to Archive
+  rpc ArchiveThread(ArchiveThreadRequest) returns (ArchiveThreadResponse);
+
+  // Delete a thread from all user's boxes
+  rpc DeleteThread(DeleteThreadRequest) returns (DeleteThreadResponse);
+
+  // Start a new thread with a new paid message
+  rpc NewThread(NewThreadRequest) returns (NewThreadResponse);
+
+  // Returns basic public account info based on account name or address including pre-key which enables sending encrypted
+  // messages to this account
+  rpc GetAccount(GetAccountRequest) returns (GetAccountResponse);
+
+  // Returns all publicly listed account for purpose of displaying a directory
+  rpc GetPublicAccounts(GetPublicAccountsRequest) returns (GetPublicAccountsResponse);
+
+  // Returns the current on-chain deposit information for a transaction in a message
+  rpc GetMessageDepositData(GetMessageDepositDataRequest) returns (GetMessageDepositDataResponse);
+
+  // Returns fiat price estimate for a coin such as ETH
+  rpc GetCoinPrice(GetCoinPriceRequest) returns (GetCoinPriceResponse);
+
+}

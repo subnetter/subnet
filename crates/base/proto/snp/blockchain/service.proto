@@ -1,0 +1,57 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.blockchain;
+
+import "snp/blockchain/types.proto";
+
+// todo: this should move to snp package. This api is a public service that each node should provide to anyone.
+
+// Subnet blockchain service
+// Provided by the blockchain mock service for the alpha release, and by every node in the beta release.
+// The blockchain maintains accounts, identity bundles, blocks transactions in blocks or in mem pool
+service BlockchainService {
+
+  // Submit a transaction for processing
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+
+  // Sets balance for an address. Address will be added to ledger if needed. Used in genesis only.
+  rpc SetBalance(SetBalanceRequest) returns (SetBalanceResponse);
+
+  // Gets TransactionInfo for a tx id - will returned if in pool or on ledger
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
+
+  // Returns account current state if exists on ledger
+  rpc GetAccount(GetAccountRequest) returns (GetAccountResponse);
+
+  // Returns block data
+  rpc GetBlock(GetBlockRequest) returns (GetBlockResponse);
+
+  // Returns current block data
+  rpc GetCurrentBlock(GetCurrentBlockRequest) returns (GetBlockResponse);
+
+  // built-in identity bundles support
+
+  // Gets the current provider identity bundle from the ledger for a provider id
+  rpc GetProviderIdentityBundle(GetProviderIdentityBundleRequest) returns (GetProviderIdentityBundleResponse);
+
+  // Get the current client identity bundle from the ledger for a client id
+  rpc GetClientIdentityBundle(GetClientIdentityBundleRequest) returns (GetClientIdentityBundleResponse);
+
+  // A temp convenience method used to get all clients registered in a network
+  rpc GetClients(GetClientsRequest) returns (GetClientsResponse);
+
+  // Returns all providers registered in a network
+  rpc GetProviders(GetProvidersRequest) returns (GetProvidersResponse);
+
+  // Proof of Useful Work related methods
+  /////////////////
+
+  // Returns recent created blocks count by an entity - PoUW
+  rpc GetValidatedBlocksCountByEntity(GetBlocksCountByEntityRequest) returns (GetBlocksCountByEntityResponse);
+
+  // Returns recent sealed blocks count by an entity - PoUW
+  rpc GetSealedBlocksCountByEntity(GetBlocksCountByEntityRequest) returns (GetBlocksCountByEntityResponse);
+}

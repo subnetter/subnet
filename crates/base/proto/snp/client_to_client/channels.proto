@@ -1,0 +1,60 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.client_to_client;
+import "snp/core_types/types.proto";
+import "snp/core_types/channels.proto";
+
+//////////////
+//
+// SNP - Channels client-to-client network protocol
+// Messages requests and responses from a client to a client related to channels and content
+//
+/////////////
+
+// Request to subscribe to a channel or to join a group
+message ChannelSubscriptionRequest {
+    snp.core_types.ChannelSubscriptionRequestData subscription_request_data = 1;
+}
+
+message ChannelSubscriptionResponse {
+    bytes channel_id = 1;
+    bool subscribed = 2; // confirmation
+    string message = 3; // rejection message or welcome message
+}
+
+/////////////
+
+// Request to unsubscribe from a status update channel or to leave a group
+message CancelChannelSubscription {
+    uint64 time_stamp = 1;
+    bytes channel_id = 2;
+    snp.core_types.EntityId user = 3;
+    string message = 4; // user can provide reason
+}
+
+message CancelChannelSubscriptionResponse {
+    bytes channel_id = 1;
+}
+
+/////////////
+
+// New channel message
+// Sent from channel creator to all status updates subscribers (or for a group, to group members)
+message NewChannelMessage {
+    snp.core_types.ChannelContentItem content_item = 1;
+}
+
+///////////////
+
+// A request from a client to post a message to a channel. Sent from author to channel owner.
+// Message is a reply to a status message or a group message in a group that client is member of.
+message NewChannelMessageRequest {
+    snp.core_types.ContentItem content_item = 1;
+}
+
+message NewChannelMessageResponse {
+
+}

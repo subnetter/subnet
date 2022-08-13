@@ -1,0 +1,60 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+
+syntax = "proto3";
+package snp.payments;
+
+///
+/// Wallet related data types used by the WalletService component
+// Basic model:
+// Safe (file) -> Wallet {seed} -> Account -> {address, pub_key, derive_index}}
+/////////////////////////////
+
+// A wallet account has a derivation index in wallet and a public key. Account address derived from pub key.
+// Account data is stored in wallets. AccountState is stored on the blockchain.
+// Private key computable from account's wallet seed and derivation_index
+message Account {
+  uint64 created = 1; // time stamp
+  string name = 2; // user provided name
+  uint32 derivation_index = 3; // wallet derivation used to compute private key
+  bytes pub_key = 4; // entry's pub key corresponding to private. Address/AccountId is derived from the pub key.
+}
+
+// Specifies where the seed is stored
+enum SeedModel {
+  SEED_MODEL_HW_LEDGER = 0; // ledger hardware wallet
+  SEED_MODEL_HOT = 1; // in wallet file
+}
+
+enum SeedType {
+  SEED_TYPE_BIP_32 = 0; // 128 bit
+}
+
+message Seed {
+  SeedModel model = 1;
+  SeedType type = 2;
+  bytes seed = 3; // for a hot seed
+}
+
+// A wallet has a hot seed or seed on an associated hardware wallet
+// Wallet is a hierarchical deterministic wallet.
+// See https://en.bitcoin.it/wiki/Deterministic_wallet
+message Wallet {
+  string name = 1;
+  uint64 created = 2;
+  // Accounts used by user of this wallet
+  repeated Account account = 3;
+  Seed seed = 4;
+}
+
+// Safe contains wallets owned by a single entity - stored in a `Safe file` with seed data secured by AES, KDF and user's password
+// Contains one or more wallets.
+message Safe {
+  // for now we special-case 3 accounts but safe can contain additional wallets and multiple wallets of each type
+  string name = 1;
+  uint64 created = 2;
+  Wallet cold_wallet = 3; // savings. private key in hardware wallet.
+  Wallet hot_wallet = 4; // spending wallets with private keys accessible.
+  Wallet identity_wallet = 5; // a wallet for signing messages
+  repeated Wallet additional_wallets = 6; // additional wallets
+}

@@ -1,0 +1,8 @@
+{
+    "peer_name": "ServiceProviderA",
+    "grpc_server_port": 8082,
+    "db_name": "spa_db"
+}
+
+
+

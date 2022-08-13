@@ -1,0 +1,52 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.client_to_client;
+import "snp/core_types/types.proto";
+import "snp/payments/types.proto";
+
+//////////////
+//
+// SNP - Paid Items client-to-client network protocol
+// Messages requests and responses from client to client regarding paid content items
+//
+/////////////
+
+// Request to list all current content items for sale by a client
+message ListPaidItemsRequest {
+}
+
+message ListPaidItemsResponse {
+    repeated snp.core_types.ContentItem content_items = 1;
+}
+
+// Request to return meta data about a content items
+message GetItemDataRequest {
+    uint64 item_id = 1;
+}
+
+// Response - a content item with an empty MediaItems is returned with all content meta-data
+message GetItemDataResponse {
+    snp.core_types.ContentItem item = 1;
+}
+
+/////////////
+
+// Request to unsubscribe from a status update channel or to leave a group
+message BuyItemRequest {
+    uint64 item_id = 1;
+    snp.payments.TransactionId transaction_id = 2;
+}
+
+enum BuyItemResult {
+    BUY_ITEM_RESULT_INVALID_TRANSACTION = 0;
+    BUY_ITEM_RESULT_ITEM_NOT_FOUND = 1;
+    BUY_ITEM_RESULT_SUCCESS = 2;
+}
+message BuyItemResponse {
+   BuyItemResult result = 1;
+   uint64 receipt_id = 2;
+   snp.core_types.ContentItem item = 3;
+}

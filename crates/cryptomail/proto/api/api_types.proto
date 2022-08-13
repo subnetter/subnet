@@ -1,0 +1,194 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package api;
+import "types/types.proto";
+import "types/content.proto";
+import "types/accounts.proto";
+
+message GetNewThreadIdRequest {
+}
+
+message GetNewThreadIdResponse {
+  uint64 thread_id = 1;
+}
+
+message CreateAccountRequest {
+  uint64 time_stamp = 1; // to avoid replay attacks
+  types.PublicKey public_key = 2;
+  types.Settings settings = 3;
+  types.PublicAccountInfo public_account_info = 4; // signed publishable account info including payment settings
+  bytes signature = 5; // signature on all other data with private key matching provided public
+}
+
+enum CreateAccountResult {
+  CREATE_ACCOUNT_RESULT_CREATED = 0; // thread successfully created
+  CREATE_ACCOUNT_RESULT_EXISTS = 1; // account with this pub key already exists
+  CREATE_ACCOUNT_RESULT_NAME_TAKEN = 2; // there's already an account with this name
+}
+
+message CreateAccountResponse {
+  CreateAccountResult result = 1;
+  types.Account account = 2;
+
+  // we return thread-boxes for the new account with possibly welcome message in the future
+  // repeated types.ThreadBox threads_boxes = 3;
+  // repeated types.Message messages = 4; // all messages in each thread in each thread-box
+}
+
+message GetThreadBoxesRequest {
+  uint64 time_stamp = 1; // to avoid replay attacks from mim who can read https traffic
+  types.PublicKey public_key = 2; // caller public key
+  uint32 thread_boxes = 3; // bitmask of boxes to get
+  bytes Signature = 4;
+}
+
+message GetThreadBoxesResponse {
+  types.Account account = 1; // updated caller account (info+reputation from the server
+  repeated types.ThreadBox threads_boxes = 2;
+  repeated types.Message messages = 3; // all messages in each thread in each thread-box
+  repeated types.Account accounts = 4; // info for each sender of a message
+  repeated types.Thread threads = 5; // all threads that are included in one of the response's boxes
+
+  // todo: consider sign with server id so results can be authenticated?
+}
+
+// a request to start a new thread by sending a first message in the thread
+// thread id must be globally unique and set by caller. In case of conflict it will be rejected.
+message NewThreadRequest {
+  uint64 time_stamp = 1; // to avoid replay attacks
+  types.PublicKey public_key = 2;
+  bytes message_user_data = 3; // binary MessageUserData
+  bytes message_user_data_signature = 4; // signature on binary message_user_data
+  types.MessageId message_id = 5;
+  bytes signature = 6; // on all other fields
+}
+
+enum NewThreadResult {
+  NEW_THREAD_RESULT_CREATED = 0; // thread successfully created
+  NEW_THREAD_RESULT_INVALID_THREAD_ID = 1; // id is taken - user should select a new one and call again
+  NEW_THREAD_RESULT_INVALID_SIG = 2; // invalid user signature on data
+  NEW_THREAD_RESULT_MISSING_DATA = 3; // missing user provided data
+  NEW_THREAD_RESULT_INVALID_TX = 4; // can't find transaction in mem-pool or in a block
+  NEW_THREAD_RESULT_INVALID_TIME_STAMP = 5; // message too old or too in the future
+  NEW_THREAD_RESULT_INVALID_SENDER_ACCOUNT = 6; // sender doesn't have an account
+  NEW_THREAD_RESULT_INVALID_RECEIVER_ACCOUNT = 7; // receiver doesn't have an account
+}
+
+message NewThreadResponse {
+  NewThreadResult result = 1;
+  types.MessageId message_id = 2;
+}
+
+// todo: consider getting from user transaction id for paid open!
+message OpenMessageRequest {
+  uint64 time_stamp = 1; // to avoid replay attacks
+  types.PublicKey public_key = 2;
+  types.MessageId message_id = 3;
+  bytes signature = 4;
+}
+
+message OpenMessageResponse {
+}
+
+// todo: consider getting user transaction id for paid reply!
+message ReplyRequest {
+  uint64 time_stamp = 1; // to avoid replay attacks
+  types.PublicKey public_key = 2;
+  bytes message_user_data = 3; // binary signed MessageUserData
+  bytes message_user_data_signature = 4; // signature on binary message_user_data
+  types.MessageId message_id = 5;
+  bytes signature = 6; // on all other fields
+}
+
+message ReplyResponse {
+  types.MessageId message_id = 1;
+}
+
+message ArchiveThreadRequest {
+  uint64 time_stamp = 1; // to avoid replay attacks
+  types.PublicKey public_key = 2;
+  bytes thread_id = 3;
+  bytes signature = 4; // user signature on thread id
+}
+
+message ArchiveThreadResponse {
+  types.ThreadId thread_id = 1;
+}
+
+message DeleteThreadRequest {
+  uint64 time_stamp = 1; // to avoid replay attacks
+  types.PublicKey public_key = 2;
+  bytes thread_id = 3;
+  bytes signature = 4; // user signature on thread id
+}
+
+message DeleteThreadResponse {
+  types.ThreadId thread_id = 1;
+}
+
+message UpdateSettingsRequest {
+    uint64 time_stamp = 1; // to avoid replay attacks
+    types.PublicKey public_key = 2; // account id
+    types.Settings settings = 3;
+    types.PublicAccountInfo public_account_info = 4; // signed publishable account info - including new pre-key and payment settings
+    bytes signature = 5;
+}
+
+message UpdateSettingsResponse {
+}
+
+message DeleteAccountRequest {
+  uint64 time_stamp = 1; // to avoid replay attacks
+  types.PublicKey public_key = 2;
+  bytes signature = 3;
+}
+
+message DeleteAccountResponse {
+}
+
+message GetAccountRequest {
+  oneof data {
+      types.PublicKey public_key = 1;
+      string name = 2;
+  }
+}
+
+// Public account info
+message GetAccountResponse {
+  types.Account account = 1;
+}
+
+message GetPublicAccountsRequest {
+  string from = 1; // get from a name...
+  uint32 max_results = 2; // max number of results to return
+}
+
+message GetPublicAccountsResponse {
+  uint32 total = 1; // total accounts in the system
+  repeated types.Account accounts = 2; // starting at offset and up to max_results
+}
+
+message GetMessageDepositDataRequest {
+  types.MessageId message_id = 1;
+}
+
+message GetMessageDepositDataResponse {
+  types.DepositConfirmation deposit_confirmation = 1;
+}
+
+message GetCoinPriceRequest {
+  string symbol = 1; // e.g ETH
+  repeated string currencies = 2; // e.g. USD, EUR
+}
+
+message FiatCoinPrice {
+  string currency = 1;
+  float price = 2;
+}
+message GetCoinPriceResponse {
+  repeated FiatCoinPrice prices = 1;
+}
+

@@ -1,0 +1,7 @@
+{
+    "peer_name": "Blockchain Service",
+    "host_name": "[::1]",
+    "grpc_server_port": 5555,
+    "db_name": "blockchain_service_db",
+    "net_id": 0
+}

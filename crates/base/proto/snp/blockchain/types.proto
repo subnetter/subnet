@@ -1,0 +1,189 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.blockchain;
+
+import "snp/core_types/types.proto";
+import "snp/core_types/identity_bundles.proto";
+import "snp/payments/types.proto";
+
+message Account {
+  snp.payments.Address address = 1;
+  uint64 nonce = 2;
+  repeated snp.payments.Amount balances = 3;
+}
+
+message Block {
+  uint64 id = 1; // incremental id
+  repeated Transaction transactions = 2;
+  snp.core_types.EntityId sealer = 3; // entity which seal the block
+  bytes signature = 4; // entity's signature
+}
+
+enum TransactionState {
+  TRANSACTION_STATE_UNKNOWN = 0;
+  TRANSACTION_STATE_SUBMITTED = 1;
+  TRANSACTION_STATE_REJECTED_UNKNOWN_SENDER = 2;
+  TRANSACTION_STATE_REJECTED_INTERNAL_ERROR = 3;
+  TRANSACTION_STATE_REJECTED_INVALID_COUNTER = 4;
+  TRANSACTION_STATE_REJECTED_INVALID_DATA = 5;
+  TRANSACTION_STATE_REJECTED_INVALID_SIGNATURE = 6;
+  TRANSACTION_STATE_REJECTED_INSUFFICIENT_FUNDS = 7;
+  TRANSACTION_STATE_CONFIRMED = 8; // approved but not yet finalized
+  TRANSACTION_STATE_FINAL = 9; // finalized
+  TRANSACTION_STATE_UNRECOGNIZED = 10; // not found in ledger
+}
+
+enum TransactionType {
+  TRANSACTION_TYPE_UNKNOWN = 0;
+  TRANSACTION_TYPE_SEND_COIN = 1;
+  TRANSACTION_TYPE_SET_PROVIDER_BUNDLE = 2;
+  TRANSACTION_TYPE_SET_CLIENT_BUNDLE = 3;
+}
+
+// Transaction fee
+message TransactionFee {
+  // fee amount
+  snp.payments.Amount amount = 1;
+  // empty when transaction sender pays the fee. Otherwise, payer payment address public key.
+  bytes payer_public_key = 2;
+}
+
+// Transaction can be submitted with fee payed by sender or with fee paid by another party.
+// When sender pays the fee he provides the fee amount and signs it as part of the tx signature and the fee_signature is empty.
+// When another party pays the transaction fee, the sender signs all fields besides the fee and the fee payer provides the fee info and signs it and the other tx fields.
+// The 3rd party tx fee feature is designed so providers can pay the transaction fees for transactions related to provided service for their users.
+message Transaction {
+  // sender pub key
+  bytes sender_pub_key = 1;
+  // sender tx nonce
+  uint64 counter = 2;
+  // Optional entity id (such as provider or user)
+  snp.core_types.EntityId entity_id = 3;
+  // Subnet blockchain id
+  uint32 net_id = 4;
+  // Transaction data
+  oneof data {
+    PaymentTransactionData payment_transaction = 5;
+    ProviderBundleTransactionData provider_bundle = 6;
+    ClientBundleTransactionData client_bundle = 7;
+  }
+  // sender signature on all other fields besides fee and fee_signature field when tx is meant to be payed by another entity
+  bytes signature = 8;
+
+  // transaction fee
+  TransactionFee fee = 9;
+
+  // signature of tx fee payer on all other fields in case sender doesn't pay the fee. Empty otherwise
+  bytes fee_signature = 10;
+}
+
+// a blockchain transaction - can be a user-to-user payment or a user-to-provider payment
+message PaymentTransactionData {
+  snp.payments.Address receiver = 1; // receiver account
+  snp.payments.Amount coins = 3; // tx amount
+  uint64 id = 4; // invoice or contract id this payment is for (optional)
+}
+
+// Provider identity bundle
+message ProviderBundleTransactionData {
+  snp.core_types.ProviderIdentityBundle provider_bundle = 1;
+}
+
+// Users client identity bundle signed by a provider
+message ClientBundleTransactionData {
+  snp.core_types.ProviderSignedClientIdentityBundle client_bundle = 1;
+}
+
+// Information about a transaction obtainable from pool or from ledger
+message TransactionInfo {
+  snp.payments.TransactionId id = 1; // this is a h ash of binary Transaction data - implied from transaction
+  TransactionState state = 2; // transaction current state - in pool, on ledger, unkown, etc...
+  Transaction transaction = 3;
+  TransactionType transaction_type = 4; // implied from Transaction
+  uint64 block_id = 5; // block id if transaction is on ledger
+}
+
+message SubmitTransactionRequest {
+  Transaction transaction = 1;
+}
+
+message SubmitTransactionResponse {
+  snp.payments.TransactionId id = 1; // computed by node - just hash of transaction binary data
+}
+
+message GetProviderIdentityBundleRequest {
+  snp.core_types.EntityId entity_id = 1;
+}
+
+message GetProviderIdentityBundleResponse {
+  snp.core_types.ProviderIdentityBundle provider_bundle = 1;
+}
+
+message GetClientIdentityBundleRequest {
+  snp.core_types.EntityId entity_id = 1;
+}
+
+message GetClientIdentityBundleResponse {
+  snp.core_types.ProviderSignedClientIdentityBundle client_bundle = 1;
+}
+
+message GetClientsRequest {
+}
+
+message GetClientsResponse {
+  repeated snp.core_types.ProviderSignedClientIdentityBundle clients_bundles = 1;
+}
+
+message GetProvidersRequest {
+}
+
+message GetProvidersResponse {
+  repeated snp.core_types.ProviderIdentityBundle providers_bundles = 1;
+}
+
+message GetCurrentBlockRequest {
+}
+
+message GetBlockRequest {
+  uint64 block_id = 1;
+}
+
+message GetBlockResponse {
+  Block block = 1;
+}
+
+message SetBalanceRequest {
+  snp.payments.Address address = 1; // address
+  snp.payments.Amount amount = 2; //  balance
+}
+
+message SetBalanceResponse {
+}
+
+message GetTransactionRequest {
+  snp.payments.TransactionId id = 1;
+}
+
+message GetTransactionResponse {
+  TransactionInfo transaction_info = 1;
+}
+
+message GetAccountRequest {
+  snp.payments.Address address = 1;
+}
+message GetAccountResponse {
+  Account account = 1;
+}
+
+message GetBlocksCountByEntityRequest {
+  snp.core_types.EntityId entity_id = 1;
+  uint32 max_count = 2; // get up to max_count most recent blocks. e.g. last 10 blocks.
+}
+
+message GetBlocksCountByEntityResponse {
+  uint64 blocks_count = 1;
+  repeated Block blocks = 2;
+}

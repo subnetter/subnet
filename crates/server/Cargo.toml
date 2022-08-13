@@ -1,0 +1,65 @@
+[package]
+name = "server"
+version = "0.1.0"
+authors = ["subnetter <subnetter@pm.me>"]
+edition = "2018"
+
+[dependencies.tokio]
+version = "1.8.1"
+features = ["full"]
+
+[dependencies]
+tokio-stream = "0.1.7"
+
+base = { path = "../base" }
+db = { path = "../db" }
+blockchain = { path = "../blockchain"}
+crypto = { path = "../crypto"}
+double-ratchet = { path = "../double-ratchet" }
+common = { path = "../common" }
+xactor = { path = "../xactor", version = "0.7.9", features = ["runtime-tokio"], default-features = false}
+xactor-derive = { path = "../xactor-derive" }
+
+rocksdb = "0.16.0"
+
+serde = { version = "1.0", features = ["derive"] }
+serde_bytes = "0.11"
+bytes = { version = "1", features = ["serde"] }
+bincode = "1.3.3"
+
+tonic = { version = "=0.5.0", features = ["default", "compression"] }
+tonic-web = "0.1"
+tonic-health = "0.4"
+prost = "0.8"
+prost-types = "0.8"
+
+uint = "0.9.0"
+log = "*"
+env_logger = "*"
+anyhow = "1"
+arrayref = "0.3.6"
+byteorder = "*"
+chrono = "*"
+sha2 = "0.9.1"
+async-trait = "0.1.41"
+futures = "0.3.5"
+
+[dependencies.rand_core]
+version = "0.5"
+default-features = false
+
+[dependencies.rand]
+version = "0.6"
+features = ["i128_support"]
+
+[dependencies.x25519-dalek]
+version = "1"
+default-features = false
+features = ["std", "u64_backend", "serde"]
+
+[dependencies.ed25519-dalek]
+version = "1"
+features = ["serde"]
+
+[dev-dependencies]
+nix = "0.19.1"

@@ -1,0 +1,61 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package types;
+import "types/types.proto";
+
+// Account is a User Account. Note that all account info so public including settings.
+message Account {
+  PublicKey id_pub_key = 1; // public address is last 20 bytes of pub_key
+  Reputation reputation = 2; // 0..100
+  uint64 time_created = 3; // time account created
+  uint64 time_last_login = 4; // time last login to client
+  Settings settings = 5; // user required updatable settings
+  PublicAccountInfo public_account_info = 8; // signed public account info including payment settings
+}
+
+// Settings are user updatable data
+// User must sign
+message Settings {
+  bool public_list_account = 1; // list account in account directory - all accounts are public - that's the point of this system
+  bool display_art_background = 2; // when true show rotation art pieces in client background
+  bool active = 3; // account active state
+}
+
+message Reputation {
+  // Number of message received with a valid deposit to open the message and amount equals or greater than the user's open price
+  uint64 open_paid_messages_received = 1;
+
+  // Number of valid open messages opened by the user
+  uint64 open_paid_message_opened = 2;
+
+  // Number of messages received with a valid deposit to reply to the message and amount equals or greater than the user's reply price
+  uint64 messages_reply_paid_received = 3;
+
+  // Number of valid reply message opened by the user
+  uint64 messages_reply_paid_opened = 4;
+
+  // Number of deposits redeemed by account w/o opening their messages
+  uint64 payment_redeemed_no_open = 5;
+
+  // Number of deposits redeemed by account w/o replying to their messages
+  uint64 payment_redeemed_no_reply = 6;
+
+  // Computed offline based on all data above - stored here for quick display
+  float reputation_score = 7;
+
+  // Service join counter
+  uint64 og_rank = 8;
+
+  // Current period cmail tokens balance
+  uint64 cmail_token_balance_cur_period = 9;
+
+  // Last period amount credited to user's wallet
+  uint64 last_drop_cmail_tokens = 10;
+
+  // all accumulated cmail token balance
+  uint64 cmail_token_balance_total_earned = 11;
+
+}

@@ -1,0 +1,43 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.server_api;
+import "snp/server_api/provider_core_service_types.proto";
+
+// MessagingService is a GRPC service provided by a provider to clients and other providers over the Internet.
+// The service provide several methods for getting provider public data such as provider identity, a method for
+// clients to register a receiver of stream of messages from provider to client and methods for receiving DR session encrypted
+// messages. Other providers and clients use the DR methods to send messages to this provider in a higher-level protocol.
+
+// todo: Change to ProviderService
+service ProviderCoreService {
+
+  // Client (or another Service Provider) requests to create a new DR enc session using 2XDH
+  // and sends a first message in this session. This is basically the messaging service handshake protocol with an optional first message.
+  rpc NewSession(NewSessionRequest) returns (NewSessionResponse);
+
+  // Client (or another Service Provider) requests to process new message in an existing DR session.
+  // All higher-level protocol messages are sent using this method.
+  rpc Message(MessageRequest) returns (MessageResponse);
+
+  // A streaming api for clients served by this provider to get incoming messages from other entities (or other types of messages)
+  // pushed to it. Providers announce the availability of this service via their terms of service.
+  // In the full product implementation, servers push meta-data about a new message (id, byte_size), clients pay for it and request the message by providing receipt and message id
+  rpc SubscribeToClientMessages(SubscribeToClientMessagesRequest) returns (stream DRMessage);
+
+  // The methods below are a public service offered by the provider with public information
+  // that anyone can obtain without limitations so encryption is not used on them for and the
+  // the responses are signed by the provider
+
+  // Returns self's identity bundle for callers that dialed up directly.
+  // This is useful for bootstrapping a network from a list of known providers addresses.
+  rpc GetIdentityBundle(GetIdentityBundleRequest) returns (GetIdentityBundleResponse);
+
+  // Get provider terms of service by id - these include terms for public content
+  // and for encrypted content.
+  rpc GetTermsOfService(GetTermsOfServiceRequest) returns (GetTermsOfServiceResponse);
+
+}
+

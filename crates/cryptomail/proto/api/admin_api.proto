@@ -1,0 +1,42 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package api;
+import "api/api_types.proto";
+import "types/accounts.proto";
+import "types/content.proto";
+import "types/types.proto";
+
+service CryptomailAdminApiService {
+   // list all accounts
+   rpc GetAccounts(GetAccountsRequest) returns(GetAccountsResponse);
+
+   // get all server account data - including all thread-boxes, threads and messages
+   rpc GetAccountData(GetAccountDataRequest) returns(GetAccountDataResponse);
+
+   // list all paid message
+}
+
+message GetAccountsRequest {
+   string from = 1; // get from a name...
+   uint32 max_results = 2; // max number of results to return
+}
+
+message GetAccountsResponse {
+   uint32 total = 1; // total accounts in the system
+   repeated types.Account accounts = 2; // starting at offset and up to max_results
+}
+
+message GetAccountDataRequest {
+   oneof data {
+      types.PublicKey public_key = 1;
+      string name = 2;
+   }
+}
+
+message GetAccountDataResponse {
+    types.Account account = 1;
+    repeated types.ThreadBox thread_boxes = 2;
+}

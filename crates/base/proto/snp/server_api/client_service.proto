@@ -1,0 +1,116 @@
+// Copyright (c) 2021, Subnet Authors. cmdev2@proton.me.
+// This work is licensed under the Subnet v0.1.0 license published in the LICENSE file of this repo.
+//
+
+syntax = "proto3";
+package snp.server_api;
+import "snp/core_types/identity_bundles.proto";
+import "snp/payments/types.proto";
+import "snp/core_types/types.proto";
+
+///////////////////////////////////
+//
+// Application-level API provided to clients by a provider
+//
+// Clients sends a request message and providers respond with response message.
+// All other network entities should use the provider public service API.
+// Requests and responses are sent in an encrypted two-party DR session.
+//
+///////////////////
+
+// Client requests to stop being serviced by this provider.
+// Client may optionally send a new identity bundle with its new provider
+message StopServiceRequest {
+    snp.core_types.ClientIdentityBundle client_bundle = 1; // optional
+}
+
+// Stop service response
+message StopServiceResponse {
+}
+
+///////////////////////
+// Current service status
+//
+
+// Client request to receive its current service status
+message ServiceStatusRequest {
+}
+
+message ServiceStatusResponse {
+    // return open invoices
+}
+
+// todo: add GetOpenInvoices() - returns all client charges that he needs to pay such as monthly fee or monthly data storage fee
+
+// todo: add client data backup service - SaveBundle(EncArchive), ListBundles(), DeleteBundle(id), GetBundle(id)
+
+////////////////////////
+
+// Update client published pre-keys. Clients can refresh their pre-keys at any time.
+// Provider should sign if he's serving this client and store the updated signed bundle on the network's decentralized storage (Kad based)
+message SetBundleRequest {
+    snp.core_types.ClientIdentityBundle bundle = 1;
+}
+
+message SetBundleResponse {
+    snp.core_types.ProviderSignedClientIdentityBundle bundle = 1;
+}
+
+///////////////////////
+// Users Data Backup and Restore SNP protocols
+
+
+//////////
+
+message ClientDataItem {
+    uint64 storage_item_id = 1; // provider storage item id
+    uint64 size_bytes = 2; // file size in bytes
+    string name = 3; // client set name
+    uint64 id = 4; // client set id
+    uint32 period_months = 5; // period client paid for
+    uint64 store_time = 6; // timestamp of storage start time
+    uint64 expires = 7; // time storage agreement expires for the item
+    uint64 download_price = 8; // price to download the data for client
+}
+
+// A request to store a data file on the provider. The file must be an archive of one or more user encrypted data files
+message StoreClientDataRequest {
+    ClientDataItem data_item = 1;
+    snp.payments.Payment payment = 2; // payment based on current service terms and period
+}
+
+message StoreClientDataResponse {
+    uint64 storage_item_id = 1;
+}
+
+//////////
+
+message ListClientDataItemsRequest {
+}
+
+message ListClientDataItemsResponse {
+    repeated ClientDataItem items = 1;
+}
+
+//////////
+
+message GetClientDataItemInfoRequest {
+    uint64 storage_item_id = 1;
+}
+
+message GetClientDataItemInfoResponse {
+    ClientDataItem item = 1;
+}
+
+//////////
+
+message DownloadClientDataRequest {
+    uint64 storage_item_id = 1;
+    snp.payments.Payment payment = 2; // payment based on data size
+}
+
+message DownloadClientDataResponse {
+    snp.core_types.MediaItem media_item = 1; // encrypted uplaoded client data. e.g binary/zip mime compressed with zip. Uncompressed data is user-encrypted arbitrary data file.
+}
+
+//////////
