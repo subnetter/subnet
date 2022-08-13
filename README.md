@@ -13,7 +13,7 @@ Use the playground to experiment with protocol features.
 
 ## Running the playground
 1. Build the project.
-1. Copy the playground config files from `debug_config` to `target/debug`
+1. Copy the playground nodes json config files from `crates/playground/resources/` to `target/debug`
 1. `./target/debug/playground`
 
 ---
