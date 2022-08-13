@@ -1,7 +1,9 @@
-# Subnet protocol
-This is an experimental implementation of the Subnet protocol in Rust.
-The project includes service provider's full p2p node, terminal clients and comperhansive tests.
-It also includes the [Subnet interactive playground](https://asciinema.org/a/W51QFvKxyFq64kOQJh2gVRqVL).
+# Subnet
+Subnet is a web3 digital communications platform.
+This repository is an experimental implementation of the Subnet protocol v0.1 in Rust.
+The project includes code for service provider's full p2p nodes, terminal clients and comperhansive scenario tests.
+It also includes the [Subnet interactive playground](https://asciinema.org/a/W51QFvKxyFq64kOQJh2gVRqVL). 
+Use the playground to experiment with protocol features.
 
 ## Building
 ```cargo build```
