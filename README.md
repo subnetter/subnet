@@ -1,4 +1,16 @@
-# Notes
+# Subnet protocol
+This is an experimental implementation of the Subnet protocol in Rust.
+
+## Building
+```cargo build```
+
+## Testing
+```cargo test```
+
+## Running the playground
+
+
+## Dev Notes
 
 All timestamps should be in nanosecs using chrono
 
@@ -7,7 +19,7 @@ use chrono::prelude::*;
 let t = Utc::now().timestamp_nanos() as u64
 ```
 
-# Architecture
+#### Architecture
 
 - Uses `xactors` (over `tokio` runtime) actors pattern. Async actors that can return responses to messages.
 - Uses `tonic` and `prost` for grpc
@@ -25,7 +37,7 @@ let t = Utc::now().timestamp_nanos() as u64
 - `server` - Server implementation.
 - `server-app` - 
 
-# Master TODO list
+#### Master TODO list
 - Handle out of order DR messages properly
     - count, prev-count, etc...
 - Update to tokio 1.0 and xactor to the latest release (embedded code)    
@@ -37,7 +49,7 @@ let t = Utc::now().timestamp_nanos() as u64
 - Implement the switch provider flow - user sets a new provider and stops service from an old provider.
 -------
 
-## Crypto
+### Crypto
 
 - Mock Crypto L1 and Crypto L2 
 - CoreCoin - $UP  
@@ -84,24 +96,6 @@ Wallet
 - CreateAccount(key-pair) // creat an L1 account (it will have נשךשמבק)
 - LockFundsForL2Payments(keypair, amount)
 - Accounts() // shows managed accounts
-
-# Multimedia Content
-
-# Paid Content Item 
-Client Publishing
-  - create item 
-    - name 
-    - content 
-    - price
-  - get id  
-- ListItems -> {
-   - Name 
-   - Created 
-   - price 
-  }
-     
-- Purchase Flow
-
 
 ---
 
