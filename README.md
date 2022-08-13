@@ -8,6 +8,9 @@ This is an experimental implementation of the Subnet protocol in Rust.
 ```cargo test```
 
 ## Running the playground
+1. Build the project.
+1. Copy the playground config files from `debug_config` to `target/debug`
+1. `./target/debug/playground`
 
 
 ## Dev Notes
