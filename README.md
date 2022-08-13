@@ -1,5 +1,7 @@
 # Subnet protocol
 This is an experimental implementation of the Subnet protocol in Rust.
+The project includes service provider's full p2p node, terminal clients and comperhansive tests.
+It also includes the [Subnet interactive playground](https://asciinema.org/a/W51QFvKxyFq64kOQJh2gVRqVL).
 
 ## Building
 ```cargo build```
@@ -12,6 +14,7 @@ This is an experimental implementation of the Subnet protocol in Rust.
 1. Copy the playground config files from `debug_config` to `target/debug`
 1. `./target/debug/playground`
 
+---
 
 ## Dev Notes
 
@@ -50,6 +53,7 @@ let t = Utc::now().timestamp_nanos() as u64
 - Properly support net-id in bundles and p2p message + init entities w net id from config file.        
 - Add user update bundle feature (new prekey) with provider
 - Implement the switch provider flow - user sets a new provider and stops service from an old provider.
+
 -------
 
 ### Crypto
