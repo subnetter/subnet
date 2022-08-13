@@ -1,8 +1,0 @@
-{
-    "peer_name": "SPB",
-    "host_name": "[::1]",
-    "grpc_server_port": 8083,
-    "db_name": "spb_db",
-    "net_id": 1,
-    "grpc_admin_port": 9083
-}

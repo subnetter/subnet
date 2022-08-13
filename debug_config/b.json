@@ -1,7 +1,0 @@
-{
-    "client_name": "B",
-    "host_name": "[::1]",
-    "grpc_server_port": 3034,
-    "db_name": "client_b_db",
-    "net_id": 1
-}
