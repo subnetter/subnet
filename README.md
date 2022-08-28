@@ -1,4 +1,8 @@
 # Subnet
+
+![subnet_solarpunk](https://user-images.githubusercontent.com/81357917/187052450-a4b91c12-2414-4418-bc02-dc2c67042dd5.png)
+
+
 Subnet is a web3 digital communications platform.
 This repository is an experimental implementation of the Subnet protocol v0.1 in Rust.
 The project includes code for service provider's full p2p nodes, terminal clients and comperhansive scenario tests.
